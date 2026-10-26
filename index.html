@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sozialversicherungs-Labor</title>
+<style>
+:root{
+  --bg:#EDF1F5; --surface:#FFFFFF; --ink:#12263F; --ink2:#4A5C73; --line:#D3DCE6;
+  --accent:#2B59C3; --accent-soft:#E3EAF9; --pos:#0E8A6D; --neg:#CF3F33; --track:#D3DCE6;
+  --display:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1826; --surface:#162437; --ink:#E6EDF6; --ink2:#9FB0C5; --line:#2A3C54;
+    --accent:#7AA2FF; --accent-soft:#1F3254; --pos:#3DC9A1; --neg:#FF7A6B; --track:#2A3C54;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1826; --surface:#162437; --ink:#E6EDF6; --ink2:#9FB0C5; --line:#2A3C54;
+  --accent:#7AA2FF; --accent-soft:#1F3254; --pos:#3DC9A1; --neg:#FF7A6B; --track:#2A3C54;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);}
+*,*::before,*::after{box-sizing:inherit;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;}
+p{margin:0 0 .6em;}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px;}
+
+.brand{padding:22px 0 14px;}
+.brand h1{font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:700;letter-spacing:-.01em;}
+.brand p{color:var(--ink2);margin-top:6px;max-width:60ch;}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex:0 0 auto;appearance:none;border:0;background:transparent;color:var(--ink2);font:inherit;font-weight:700;
+  padding:12px 14px;border-bottom:4px solid transparent;cursor:pointer;white-space:nowrap;min-height:48px;}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);}
+.tab:hover{color:var(--ink);}
+.strip{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 2px 10px;font-size:.95rem;color:var(--ink2);}
+.strip b{font-family:var(--display);font-size:1.15rem;color:var(--tone,var(--ink));}
+
+.claim{margin:20px 0 6px;background:var(--accent-soft);border-radius:14px;padding:18px 20px;}
+.claim .label{font-weight:700;color:var(--ink2);font-size:.92rem;margin-bottom:4px;}
+.claim q{display:block;font-family:var(--display);font-weight:600;font-size:clamp(1.25rem,3.4vw,1.7rem);line-height:1.25;quotes:none;}
+.claim .hint{margin:10px 0 0;color:var(--ink);}
+.claim details{margin-top:10px;}
+.claim summary{cursor:pointer;font-weight:700;color:var(--accent);}
+.claim details p{margin-top:8px;}
+
+.grid{display:block;margin-top:18px;}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;}
+.board{display:grid;gap:14px;margin-bottom:18px;}
+
+.scale{--tone:var(--pos);}
+.scale.deficit{--tone:var(--neg);}
+.scale svg{display:block;width:100%;height:auto;max-height:300px;}
+.beam{stroke:var(--tone);stroke-width:7;stroke-linecap:round;}
+.pivot{fill:var(--tone);}
+.pole{stroke:var(--ink2);stroke-width:5;stroke-linecap:round;}
+.basefoot{fill:var(--ink2);}
+.string{stroke:var(--ink2);stroke-width:2;}
+.pan{fill:var(--accent-soft);stroke:var(--ink2);stroke-width:2.5;}
+.pan-l{font-family:var(--body);font-size:14px;fill:var(--ink2);text-anchor:middle;}
+.pan-v{font-family:var(--display);font-weight:700;font-size:17px;fill:var(--ink);text-anchor:middle;}
+.verdict{border-top:1px solid var(--line);margin-top:8px;padding-top:12px;}
+.verdict h2{font-size:1.3rem;color:var(--tone);margin-bottom:4px;}
+.verdict p{margin:0;color:var(--ink);}
+.parts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;font-size:.93rem;color:var(--ink2);}
+.parts ul{list-style:none;margin:0;padding:0;}
+.parts li{display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
+.parts b{color:var(--ink);font-weight:700;}
+.parts h3{font-size:.95rem;color:var(--ink);margin-bottom:4px;}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.metric{background:var(--bg);border-radius:10px;padding:10px 12px;min-width:0;}
+.metric .m-who{font-size:.82rem;color:var(--accent);font-weight:700;}
+.metric .m-val{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1.15;margin:2px 0;overflow-wrap:anywhere;}
+.metric .m-lab{font-size:.86rem;color:var(--ink2);line-height:1.3;}
+
+.controls h2,.tasks h2{font-size:1.35rem;}
+.ctl-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.presets{display:flex;flex-wrap:wrap;gap:8px;}
+.btn{appearance:none;font:inherit;font-weight:700;border:2px solid var(--accent);background:transparent;color:var(--accent);
+  border-radius:999px;padding:8px 14px;cursor:pointer;min-height:44px;}
+.btn:hover{background:var(--accent-soft);}
+.btn.solid{background:var(--accent);color:var(--surface);}
+.btn.quiet{border-color:var(--line);color:var(--ink2);}
+.param{padding:14px 0;border-top:1px solid var(--line);}
+.param:first-child{border-top:0;padding-top:4px;}
+.ph{display:flex;align-items:center;gap:8px;}
+.ph label{font-weight:700;flex:1;min-width:0;}
+.ph output{font-family:var(--display);font-weight:700;font-size:1.15rem;color:var(--accent);white-space:nowrap;}
+.q{appearance:none;flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);background:transparent;color:var(--accent);
+  font:inherit;font-weight:700;cursor:pointer;line-height:1;padding:0;}
+.q[aria-expanded="true"]{background:var(--accent);color:var(--surface);}
+.pf{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--ink2);margin-top:-2px;}
+.info{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:.96rem;}
+.info[hidden]{display:none;}
+.info p:last-child{margin-bottom:0;}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:2px 0;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(to right,var(--accent) var(--pct,50%),var(--track) var(--pct,50%));}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--surface);border:4px solid var(--accent);margin-top:-9px;}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--track);}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--accent);}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--surface);border:4px solid var(--accent);}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px;}
+
+.tasks{margin:30px 0 10px;}
+.tasks > p{color:var(--ink2);}
+.task{margin-top:16px;}
+.task label{display:block;font-weight:700;margin-bottom:6px;}
+textarea{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;min-height:88px;}
+textarea:focus{border-color:var(--accent);outline:none;}
+.export{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);}
+.export textarea{margin-top:10px;min-height:150px;}
+.foot{margin:28px 0 40px;color:var(--ink2);font-size:.9rem;max-width:75ch;}
+
+@media (min-width:900px){
+  .strip{display:none;}
+  .top{border-bottom:1px solid var(--line);}
+  .grid{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:30px;align-items:start;}
+  .board{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);margin-bottom:0;max-height:calc(100vh - 80px);overflow-y:auto;padding-bottom:4px;}
+  .metrics{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:420px){ .metrics{gap:8px;} .metric .m-val{font-size:1.15rem;} }
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto !important;transition:none !important;animation:none !important;} }
+
+q{quotes:none;}
+.sub{color:var(--ink2);}
+.opt{font-weight:400;color:var(--ink2);}
+.ctl-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.switch{display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;min-height:44px;}
+.switch input{appearance:none;-webkit-appearance:none;width:46px;height:26px;border-radius:13px;background:var(--track);position:relative;cursor:pointer;margin:0;flex:0 0 auto;}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);transition:left .15s;}
+.switch input:checked{background:var(--accent);}
+.switch input:checked::after{left:23px;}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px;}
+.seg button{appearance:none;font:inherit;font-size:.95rem;font-weight:700;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;min-height:44px;cursor:pointer;flex:1 1 auto;}
+.seg button:hover{border-color:var(--accent);}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--surface);}
+.frozen{background:var(--accent-soft);color:var(--ink);font-weight:700;font-size:.92rem;border-radius:8px;padding:6px 10px;margin-bottom:6px;}
+.frozen[hidden],.resolve[hidden],.tip[hidden],.predict[hidden]{display:none;}
+.predict{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:3px solid var(--accent);box-shadow:0 -8px 24px rgba(0,0,0,.18);padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));max-height:62vh;overflow-y:auto;}
+.predict .in{max-width:640px;margin:0 auto;}
+.predict p{margin:4px 0 8px;}
+.pred-h{font-family:var(--display);font-weight:700;font-size:1.2rem;margin-bottom:4px;}
+.pred-h.hit{color:var(--pos);}
+.pred-h.miss{color:var(--neg);}
+.pred-q{display:block;font-weight:700;margin-top:8px;}
+.pred-c{color:var(--ink2);font-size:.95rem;}
+.predict input[type=text],.export input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:8px 12px;min-height:44px;}
+.predict textarea{min-height:64px;margin-top:4px;}
+.pred-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.warn{background:var(--accent-soft);border-left:4px solid var(--neg);padding:8px 10px;border-radius:6px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+input[type=range]:disabled{opacity:.4;cursor:not-allowed;}
+.goals{margin:4px 0 0;padding-left:20px;}
+.tiprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.tip{background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin-top:8px;font-size:.95rem;}
+.check{margin-top:10px;font-size:.95rem;}
+.task .check label{display:flex;gap:10px;align-items:flex-start;font-weight:400;margin:6px 0;cursor:pointer;}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent);flex:0 0 auto;}
+.lernstand{margin:26px 0 10px;}
+.lernstand h2{font-size:1.35rem;margin-bottom:6px;}
+.lernstand h3{font-size:1.08rem;margin:18px 0 4px;}
+.plog{list-style:none;padding:0;margin:6px 0 0;font-size:.93rem;}
+.plog li{padding:6px 0;border-top:1px solid var(--line);}
+.plog .ok{color:var(--pos);font-weight:700;}
+.plog .no{color:var(--neg);font-weight:700;}
+.resolve{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:10px;}
+.goalrow{margin-top:12px;}
+.field{display:block;font-weight:700;margin:12px 0 4px;}
+body.pred-open{padding-bottom:62vh;}
+
+.guide{margin-top:16px;border:2px solid var(--accent);}
+.steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:-4px 0 12px;padding-bottom:2px;}
+.steps::-webkit-scrollbar{display:none;}
+.step{flex:0 0 auto;appearance:none;font:inherit;font-size:.88rem;font-weight:700;border:2px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;min-height:40px;cursor:pointer;white-space:nowrap;}
+.step.done{border-color:var(--pos);color:var(--pos);}
+.step.done::before{content:"✓ ";}
+.step.on{background:var(--accent);border-color:var(--accent);color:var(--surface);}
+.g-kick{font-size:.85rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;}
+.g-h{font-family:var(--display);font-weight:700;font-size:1.35rem;margin:2px 0 4px;}
+.g-phase{font-weight:700;color:var(--accent);margin:16px 0 2px;padding-top:12px;border-top:1px solid var(--line);}
+.guide input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:8px 12px;min-height:44px;}
+.guide textarea{min-height:64px;margin-top:4px;}
+.mission{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <h1>Sozialversicherungs-Labor</h1>
+    <p>Dreh an den Reglern und sieh sofort, was mit der Kasse passiert. Wähle oben eine Versicherung.</p>
+  </header>
+</div>
+
+<nav class="top" aria-label="Sozialversicherungen">
+  <div class="wrap">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="strip" id="strip" aria-live="polite"><span>Kassenstand pro Jahr</span><b id="stripVal"></b></div>
+  </div>
+</nav>
+
+<main class="wrap" id="panel" role="tabpanel" tabindex="-1">
+  <section class="claim" id="claim"></section>
+
+  <section class="guide card" id="guide" aria-label="Geführte Szenarien" aria-live="polite"></section>
+
+  <div class="grid">
+    <aside class="board" aria-label="Ergebnis">
+      <div class="card scale" id="scale">
+        <svg viewBox="0 0 400 240" role="img" aria-label="Waage: Einnahmen gegen Ausgaben" id="svg">
+          <line class="pole" x1="200" y1="56" x2="200" y2="215"/>
+          <rect class="basefoot" x="160" y="215" width="80" height="9" rx="4"/>
+          <g id="panL">
+            <line class="string" x1="50" y1="56" x2="16" y2="116"/><line class="string" x1="50" y1="56" x2="84" y2="116"/>
+            <path class="pan" d="M8 116 H92 Q90 134 50 136 Q10 134 8 116 Z"/>
+            <text class="pan-l" x="50" y="158">Einnahmen</text>
+            <text class="pan-v" x="50" y="178" id="valIn"></text>
+          </g>
+          <g id="panR">
+            <line class="string" x1="350" y1="56" x2="316" y2="116"/><line class="string" x1="350" y1="56" x2="384" y2="116"/>
+            <path class="pan" d="M308 116 H392 Q390 134 350 136 Q310 134 308 116 Z"/>
+            <text class="pan-l" x="350" y="158">Ausgaben</text>
+            <text class="pan-v" x="350" y="178" id="valOut"></text>
+          </g>
+          <g id="beam"><line class="beam" x1="50" y1="56" x2="350" y2="56"/></g>
+          <circle class="pivot" cx="200" cy="56" r="9"/>
+        </svg>
+        <div class="verdict" aria-live="polite"><h2 id="vHead"></h2><p id="vText"></p></div>
+        <div class="parts">
+          <div><h3>Einnahmen (Mrd. €)</h3><ul id="partsIn"></ul></div>
+          <div><h3>Ausgaben (Mrd. €)</h3><ul id="partsOut"></ul></div>
+        </div>
+      </div>
+      <div class="metrics" id="metrics"></div>
+    </aside>
+
+    <section class="controls" aria-label="Regler">
+      <div class="ctl-head">
+        <h2 id="ctlTitle">Regler</h2>
+        <div class="ctl-tools"><button class="btn quiet" type="button" id="resetBtn">Zurücksetzen</button></div>
+      </div>
+      <div id="sliders"></div>
+    </section>
+  </div>
+
+  <section class="tasks" id="tasks"></section>
+
+  <section class="lernstand card" id="lernstand" aria-label="Mein Lernstand"></section>
+
+  <section class="export">
+    <h2>Abgabe</h2>
+    <p class="sub">Sammle Antworten, Vorhersagen und Selbsteinschätzung aus allen Versicherungen in einem Text, den du kopieren und abgeben kannst.</p>
+    <label class="field" for="kuerzel">Dein Kürzel (kein voller Name)</label>
+    <input type="text" id="kuerzel" autocomplete="off" maxlength="20">
+    <div class="pred-act">
+      <button class="btn solid" type="button" id="collectBtn">Lernstand sammeln</button>
+      <button class="btn" type="button" id="copyBtn" hidden>In die Zwischenablage kopieren</button>
+    </div>
+    <textarea id="exportBox" readonly hidden aria-label="Gesammelter Lernstand"></textarea>
+  </section>
+
+  <p class="foot">Vereinfachtes Modell: Die Zahlen sind gerundete Größenordnungen auf Basis der deutschen Verhältnisse und dienen dazu, Zusammenhänge zu verstehen, nicht um die Zukunft vorherzusagen. Die echten Systeme sind komplexer.</p>
+</main>
+
+<script>
+"use strict";
+const nf=(v,d=0)=>new Intl.NumberFormat("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
+const sgn=(v,d=1)=>(v>0.049?"+":v<-0.049?"\u2212":"")+nf(Math.abs(v),d);
+const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $=(s,r=document)=>r.querySelector(s);
+
+const shared={le:81};
+
+const INS=[
+/* ---------------- RENTE ---------------- */
+{
+ id:"rente",tab:"Rente",title:"Rentenversicherung",
+ claim:"\u201EJeder bekommt sp\u00E4ter genau das zur\u00FCck, was er selbst eingezahlt hat.\u201C",
+ hint:"Stimmt das? Finde mit den Reglern heraus, wof\u00FCr dein Beitrag heute verwendet wird und was passiert, wenn sich die Zahl der Beitragszahler \u00E4ndert.",
+ resolve:"Die Rente funktioniert im Umlageverfahren: Dein Beitrag wird nicht angespart, sondern bezahlt sofort die Renten der heutigen Rentner. Deine eigene Rente zahlen sp\u00E4ter die Beitragszahler von morgen. Je mehr du einzahlst, desto mehr Rentenpunkte bekommst du (\u00C4quivalenzprinzip) \u2013 ein eigenes Sparkonto gibt es aber nicht.",
+ params:[
+  {key:"contrib",label:"Beitragssatz",min:15,max:28,step:0.1,def:18.6,fmt:v=>nf(v,1)+" %",
+   what:"Der Prozentsatz deines Bruttolohns, der in die Rentenkasse flie\u00DFt. Arbeitnehmer und Arbeitgeber zahlen je die H\u00E4lfte.",
+   effect:"Ein h\u00F6herer Satz bringt der Kasse mehr Geld. Dann bleibt Besch\u00E4ftigten und Betrieben aber weniger im Portemonnaie."},
+  {key:"age",label:"Renteneintrittsalter",min:62,max:72,step:1,def:67,fmt:v=>v+" Jahre",
+   what:"Das Alter, ab dem man Rente bekommt.",
+   effect:"Wer sp\u00E4ter in Rente geht, zahlt l\u00E4nger ein und bekommt k\u00FCrzer Rente. Das entlastet die Kasse doppelt \u2013 ist aber hart f\u00FCr Menschen in k\u00F6rperlich anstrengenden Berufen."},
+  {key:"ratio",label:"Beitragszahler je Rentner",min:1,max:3,step:0.05,def:1.8,fmt:v=>nf(v,2)+" je Rentner",
+   what:"Wie viele Menschen mit ihren Beitr\u00E4gen eine Rentnerin oder einen Rentner finanzieren. Fr\u00FCher waren es deutlich mehr, heute knapp zwei.",
+   effect:"Sinkt der Wert, m\u00FCssen weniger Besch\u00E4ftigte mehr Rentner mitfinanzieren. Das ist der demografische Wandel: Die Babyboomer gehen in Rente."},
+  {key:"subsidy",label:"Bundeszuschuss",min:0,max:200,step:5,def:100,fmt:v=>nf(v,0)+" Mrd. \u20AC",
+   what:"Geld aus Steuern, das der Staat in die Rentenkasse zahlt, zum Beispiel f\u00FCr Kindererziehungszeiten.",
+   effect:"Mehr Zuschuss schlie\u00DFt L\u00FCcken, ohne dass die Beitr\u00E4ge steigen. Daf\u00FCr zahlen alle Steuerzahler mit."},
+  {key:"le",shared:"le",label:"Lebenserwartung",min:76,max:92,step:1,def:81,fmt:v=>v+" Jahre",
+   what:"Wie alt Menschen im Durchschnitt werden. Dieser Regler gilt auch in der Pflegeversicherung.",
+   effect:"Wer l\u00E4nger lebt, bekommt l\u00E4nger Rente und braucht sp\u00E4ter h\u00E4ufiger Pflege. Beides kostet die Kassen mehr."},
+  {key:"wage",label:"Durchschnittsverdienst",min:2500,max:6000,step:100,def:3800,fmt:v=>nf(v,0)+" \u20AC brutto/Monat",
+   what:"Was Besch\u00E4ftigte im Schnitt pro Monat brutto verdienen.",
+   effect:"H\u00F6here L\u00F6hne bringen sofort mehr Beitr\u00E4ge. Die Renten steigen aber zeitversetzt mit: Wer mehr einzahlt, bekommt sp\u00E4ter mehr. Schau auf den Kassenstand nach Anpassung der Renten."}
+ ],
+ presets:[
+  {name:"Babyboomer gehen in Rente",set:{ratio:1.4}},
+  {name:"Wir leben l\u00E4nger",set:{le:86}},
+  {name:"Rente mit 63",set:{age:63}}
+ ],
+ tasks:[
+  "W\u00E4hle das Szenario \u201EBabyboomer gehen in Rente\u201C und bringe die Kasse danach wieder ins Gleichgewicht (Kassenstand zwischen \u22122 und +2 Mrd. \u20AC). Welche Regler hast du bewegt und warum genau diese?",
+  "Wer tr\u00E4gt bei deiner L\u00F6sung die Last: Besch\u00E4ftigte, Rentnerinnen und Rentner oder Steuerzahler? Begr\u00FCnde.",
+  "Teste die Behauptung \u201EJeder bekommt zur\u00FCck, was er einzahlt\u201C. Was sprach in der Simulation daf\u00FCr, was dagegen?"
+ ],
+ compute(s){
+  const payers=37*(1+0.012*(s.age-67));
+  const pens=payers/s.ratio*(1+0.03*(s.le-81))*(1-0.045*(s.age-67));
+  const pf=0.44*(1+0.02*(s.age-67));
+  const wageNow=3800+0.5*(s.wage-3800);
+  const pensNow=pf*wageNow, pensLong=pf*s.wage;
+  const contrib=payers*s.contrib/100*s.wage*12/1000;
+  const income=contrib+s.subsidy;
+  const expense=pens*pensNow*12/1000;
+  const expenseLong=pens*pensLong*12/1000;
+  const incomeLong=contrib+s.subsidy*s.wage/3800;
+  return{income,expense,
+   inParts:[["Beitr\u00E4ge",contrib],["Bundeszuschuss",s.subsidy]],
+   outParts:[["Renten",expense]],
+   metrics:[
+    {who:"Besch\u00E4ftigte",lab:"Dein Beitrag pro Monat (Arbeitnehmeranteil)",val:nf(s.contrib/200*s.wage,0)+" \u20AC"},
+    {who:"Rentner:innen",lab:"Durchschnittsrente pro Monat",val:nf(pensNow,0)+" \u20AC"},
+    {who:"Kasse",lab:"Beitragszahler je Rentner (tats\u00E4chlich)",val:nf(payers/pens,2)},
+    {who:"Rentner:innen",lab:"Jahre mit Rente im Schnitt",val:nf(Math.max(0,s.le-s.age),0)+" Jahre"},
+    {who:"Rentner:innen",lab:"Rente, sobald sie voll an die L\u00F6hne angepasst ist",val:nf(pensLong,0)+" \u20AC"},
+    {who:"Kasse",lab:"Kassenstand nach dieser Anpassung (Zuschuss w\u00E4chst mit den L\u00F6hnen)",val:sgn(incomeLong-expenseLong)+" Mrd. \u20AC"}
+   ]};
+ }
+},
+/* ---------------- KRANKEN ---------------- */
+{
+ id:"kranken",tab:"Kranken",title:"Krankenversicherung",
+ claim:"\u201EWer mehr einzahlt, bekommt auch bessere Leistungen.\u201C",
+ hint:"Pr\u00FCfe: Wer zahlt viel, wer wenig \u2013 und wer kostet die Kasse wie viel? Beobachte vor allem die Familienversicherung und den Anteil der gesetzlich Versicherten.",
+ resolve:"In der gesetzlichen Krankenversicherung gilt das Solidarprinzip: Der Beitrag richtet sich nach dem Einkommen, die Leistungen nach dem Bedarf. Alle bekommen den gleichen Leistungskatalog. Gesunde zahlen f\u00FCr Kranke, Besserverdienende f\u00FCr Geringverdienende, und Kinder sind beitragsfrei mitversichert.",
+ params:[
+  {key:"base",label:"Allgemeiner Beitragssatz",min:13,max:16,step:0.1,def:14.6,fmt:v=>nf(v,1)+" %",
+   what:"Der gesetzlich festgelegte Grundbeitrag, den alle Kassen gleich verlangen. Arbeitnehmer und Arbeitgeber teilen ihn sich.",
+   effect:"Steigt er, nimmt jede Kasse mehr ein. Der Lohn bleibt daf\u00FCr kleiner."},
+  {key:"extra",label:"Zusatzbeitrag der Kassen",min:0,max:5,step:0.1,def:2.9,fmt:v=>nf(v,1)+" %",
+   what:"Den Zusatzbeitrag legt jede Kasse selbst fest, wenn das Geld aus dem Grundbeitrag nicht reicht.",
+   effect:"Er ist das Ventil f\u00FCr steigende Kosten. Dreh ihn hoch, und die Kasse wird wieder ausgeglichen \u2013 aber die Mitglieder zahlen mehr."},
+  {key:"share",label:"Anteil gesetzlich Versicherter",min:70,max:100,step:1,def:88,fmt:v=>nf(v,0)+" %",
+   what:"Wie viele Menschen in Deutschland gesetzlich und wie viele privat versichert sind. Bei 100 % h\u00E4tten alle dieselbe Versicherung (Idee der B\u00FCrgerversicherung).",
+   effect:"Mehr gesetzlich Versicherte bringen mehr Beitr\u00E4ge, auch von Besserverdienenden. Es kommen aber auch mehr Menschen dazu, die Leistungen bekommen."},
+  {key:"cost",label:"Kostenentwicklung im Gesundheitswesen",min:-10,max:30,step:1,def:0,fmt:v=>(v>0?"+":v<0?"\u2212":"")+nf(Math.abs(v),0)+" %",
+   what:"Wie stark die Ausgaben pro Kopf gegen\u00FCber heute steigen, etwa durch neue Medikamente, teure Ger\u00E4te oder eine \u00E4ltere Bev\u00F6lkerung.",
+   effect:"Medizinischer Fortschritt hilft Kranken \u2013 und wird teuer. Schau, wie schnell die Kasse ins Minus rutscht."},
+  {key:"family",label:"Beitragsfrei mitversicherte Angehörige",min:0,max:100,step:5,def:100,fmt:v=>nf(v,0)+" %",
+   what:"Wie viele der Kinder und nicht berufst\u00E4tigen Ehepartner ohne eigenen Beitrag mitversichert sind.",
+   effect:"Bei weniger Familienversicherung zahlen Angehörige einen Mindestbeitrag. Das bringt Geld, belastet aber Familien."}
+ ],
+ presets:[
+  {name:"Teurer Fortschritt",set:{cost:15}},
+  {name:"B\u00FCrgerversicherung",set:{share:100}},
+  {name:"Ohne Familienversicherung",set:{family:0}}
+ ],
+ tasks:[
+  "Stelle die Kostenentwicklung auf +15 %. Wie bringst du die Kasse wieder ins Gleichgewicht, und wer wird dadurch belastet?",
+  "Setze den Anteil gesetzlich Versicherter auf 100 %. Was ver\u00E4ndert sich bei Einnahmen und Ausgaben? Wer h\u00E4tte Vorteile, wer Nachteile?",
+  "Stelle die Familienversicherung auf 0 %. Ist das gerechter oder ungerechter? Begr\u00FCnde deine Meinung."
+ ],
+ compute(s){
+  const members=84*s.share/100;
+  const famTotal=members*0.216;
+  const famPaying=famTotal*(1-s.family/100);
+  const regular=members-famTotal;
+  const avgInc=2500*(1+0.004*(s.share-88));
+  const rate=(s.base+s.extra)/100;
+  const contrib=(regular*rate*avgInc*12+famPaying*rate*1200*12)/1000;
+  const subsidy=14.5;
+  const income=contrib+subsidy;
+  const perCap=4300*(1+s.cost/100);
+  const expense=members*perCap/1000;
+  return{income,expense,
+   inParts:[["Beitr\u00E4ge",contrib],["Bundeszuschuss",subsidy]],
+   outParts:[["Behandlung u. a.",expense]],
+   metrics:[
+    {who:"Besch\u00E4ftigte",lab:"Dein Beitrag pro Monat (Arbeitnehmeranteil)",val:nf((s.base+s.extra)/200*3800,0)+" \u20AC"},
+    {who:"Kasse",lab:"Gesamtbeitragssatz",val:nf(s.base+s.extra,1)+" %"},
+    {who:"Versicherte",lab:"Ausgaben je Versichertem pro Jahr",val:nf(perCap,0)+" \u20AC"},
+    {who:"Kasse",lab:"Gesetzlich Versicherte",val:nf(members,1)+" Mio."},
+    {who:"Kasse",lab:"Beitragsfrei mitversichert",val:nf(famTotal-famPaying,1)+" Mio."},
+    {who:"Staat",lab:"Zuschuss aus Steuergeld (fest)",val:nf(subsidy,1)+" Mrd. \u20AC"}
+   ]};
+ }
+},
+/* ---------------- PFLEGE ---------------- */
+{
+ id:"pflege",tab:"Pflege",title:"Pflegeversicherung",
+ claim:"\u201EDie Pflegeversicherung bezahlt die gesamte Pflege.\u201C",
+ hint:"Schau dir an, wie viel pro Pflegebed\u00FCrftigem ausgegeben wird und wie sich die Kosten ver\u00E4ndern, wenn mehr Menschen ins Heim kommen. \u00DCberlege: Wer zahlt den Rest?",
+ resolve:"Die Pflegeversicherung ist wie eine Teilkasko: Sie zahlt feste Zuschüsse je Pflegegrad. Der Rest ist der Eigenanteil der Pflegebedürftigen und ihrer Familien. Reicht das Geld nicht, springt das Sozialamt ein. Finanziert wird sie wie die Rente im Umlageverfahren.",
+ params:[
+  {key:"rate",label:"Beitragssatz",min:2,max:6,step:0.1,def:3.6,fmt:v=>nf(v,1)+" %",
+   what:"Der Prozentsatz des Bruttolohns f\u00FCr die Pflegeversicherung. Auch hier teilen sich Arbeitnehmer und Arbeitgeber den Beitrag.",
+   effect:"Mehr Beitrag bedeutet mehr Einnahmen, aber weniger Netto f\u00FCr alle Besch\u00E4ftigten."},
+  {key:"ratio",label:"Pflegebed\u00FCrftige je 100 Beitragszahler",min:5,max:20,step:0.5,def:10,fmt:v=>nf(v,1),
+   what:"Wie viele Menschen, die Pflege brauchen, auf 100 Menschen kommen, die Beitr\u00E4ge zahlen.",
+   effect:"Je mehr Pflegebed\u00FCrftige auf je einen Beitragszahler kommen, desto mehr Geld muss jeder Einzelne aufbringen."},
+  {key:"sev",label:"Anteil Schwerpflegebed\u00FCrftiger (Pflegegrad 4 und 5)",min:10,max:50,step:1,def:20,fmt:v=>nf(v,0)+" %",
+   what:"Wie gro\u00DF der Anteil der Menschen mit sehr hohem Pflegebedarf ist. Die Pflegegrade reichen von 1 (gering) bis 5 (schwerste Beeintr\u00E4chtigung).",
+   effect:"Schwere F\u00E4lle kosten deutlich mehr als leichte. Steigt ihr Anteil, steigen die Ausgaben stark."},
+  {key:"benefit",label:"H\u00F6he der Leistungen je Pflegegrad",min:70,max:150,step:5,def:100,fmt:v=>nf(v,0)+" % von heute",
+   what:"Wie gro\u00DF die Zusch\u00FCsse der Kasse im Vergleich zu heute sind.",
+   effect:"Mehr Leistung entlastet die Familien, kostet die Kasse aber mehr. Weniger Leistung spart Geld, erh\u00F6ht aber den Eigenanteil."},
+  {key:"le",shared:"le",label:"Lebenserwartung / Alterung",min:76,max:92,step:1,def:81,fmt:v=>v+" Jahre",
+   what:"Wie alt Menschen im Durchschnitt werden. Dieser Regler ist derselbe wie in der Rentenversicherung.",
+   effect:"Je \u00E4lter die Gesellschaft, desto mehr Menschen brauchen Pflege. Das Risiko steigt vor allem im hohen Alter."},
+  {key:"stat",label:"Anteil station\u00E4rer Pflege (Pflegeheim)",min:10,max:50,step:1,def:16,fmt:v=>nf(v,0)+" %",
+   what:"Wie viele Pflegebed\u00FCrftige im Heim leben, statt zu Hause (ambulant) gepflegt zu werden.",
+   effect:"Heimpl\u00E4tze sind f\u00FCr die Kasse viel teurer als die ambulante Pflege. Viele Menschen wollen aber zu Hause gepflegt werden \u2013 das geht nur mit ausreichend Pflegekr\u00E4ften und helfenden Angeh\u00F6rigen."}
+ ],
+ presets:[
+  {name:"\u00C4lter werdende Gesellschaft",set:{le:86,ratio:13}},
+  {name:"Fast alles ambulant",set:{stat:10}},
+  {name:"Mehr Schwerpflege",set:{sev:35}}
+ ],
+ tasks:[
+  "Stelle die Lebenserwartung auf 86 Jahre. Was passiert in der Pflegeversicherung, und was gleichzeitig in der Rentenversicherung?",
+  "Vergleiche 10 % und 40 % stationäre Pflege. Was kostet das System mehr, und was könnte f\u00FCr die Pflegebed\u00FCrftigen selbst besser oder schlechter sein?",
+  "Darf die Pflegeversicherung ihre Leistungen senken, wenn das Geld knapp wird? Wer w\u00E4re betroffen? Begr\u00FCnde."
+ ],
+ compute(s){
+  const payers=58;
+  const needy=payers*s.ratio/100*(1+0.06*(s.le-81));
+  const costPer=(1-s.sev/100)*8500+s.sev/100*19500;
+  const heim=1+(s.stat-16)/100*1.6;
+  const perNeedy=costPer*s.benefit/100*heim;
+  const expense=needy*perNeedy/1000;
+  const income=payers*s.rate/100*2500*12/1000;
+  return{income,expense,
+   inParts:[["Beitr\u00E4ge",income]],
+   outParts:[["Pflegeleistungen",expense]],
+   metrics:[
+    {who:"Besch\u00E4ftigte",lab:"Dein Beitrag pro Monat (Arbeitnehmeranteil)",val:nf(s.rate/200*3800,0)+" \u20AC"},
+    {who:"Pflegebed\u00FCrftige",lab:"Anzahl Pflegebed\u00FCrftige",val:nf(needy,1)+" Mio."},
+    {who:"Pflegebed\u00FCrftige",lab:"Kassenleistung je Pflegebed\u00FCrftigem pro Jahr",val:nf(perNeedy,0)+" \u20AC"},
+    {who:"Kasse",lab:"Beitragszahler je Pflegebed\u00FCrftigem",val:nf(payers/needy,1)},
+    {who:"Kasse",lab:"Kosten durch den Heimanteil gegen\u00FCber heute",val:(heim>=1?"+":"\u2212")+nf(Math.abs(heim-1)*100,0)+" %"}
+   ]};
+ }
+},
+/* ---------------- ARBEITSLOSEN ---------------- */
+{
+ id:"alv",tab:"Arbeitslosen",title:"Arbeitslosenversicherung",
+ claim:"\u201EIn einer Krise muss die Arbeitslosenversicherung sparen wie jeder Haushalt.\u201C",
+ hint:"Stelle die Konjunktur auf Rezession und beobachte, was mit den Einnahmen und mit den Ausgaben gleichzeitig passiert.",
+ resolve:"Die Arbeitslosenversicherung wirkt gegenläufig zur Konjunktur: In der Krise sinken die Einnahmen, weil weniger Menschen Beiträge zahlen, und die Ausgaben steigen. Rücklagen aus guten Jahren fangen das ab. Weil Arbeitslose weiter Geld bekommen und ausgeben, stabilisiert die Versicherung auch die Wirtschaft (automatischer Stabilisator).",
+ params:[
+  {key:"rate",label:"Beitragssatz",min:1,max:6,step:0.1,def:2.6,fmt:v=>nf(v,1)+" %",
+   what:"Der Prozentsatz des Bruttolohns f\u00FCr die Arbeitslosenversicherung, je zur H\u00E4lfte von Arbeitnehmern und Arbeitgebern.",
+   effect:"H\u00F6here Beitr\u00E4ge bringen Geld, verteuern aber die Arbeit \u2013 und Arbeit, die zu teuer ist, wird eher gestrichen."},
+  {key:"quote",label:"Arbeitslosenquote (Ausgangslage)",min:3,max:12,step:0.5,def:6,fmt:v=>nf(v,1)+" %",
+   what:"Wie viel Prozent der Erwerbsf\u00E4higen keinen Job haben, bevor die Konjunktur ber\u00FCcksichtigt wird.",
+   effect:"Mehr Arbeitslose bedeuten mehr Ausgaben und weniger Beitragszahler, also zwei Probleme auf einmal."},
+  {key:"dur",label:"H\u00F6chstbezugsdauer des Arbeitslosengeldes",min:6,max:24,step:1,def:12,fmt:v=>v+" Monate",
+   what:"Wie lange man h\u00F6chstens Arbeitslosengeld bekommt, bevor es ausl\u00E4uft.",
+   effect:"L\u00E4ngere Zahlungen geben mehr Sicherheit bei der Jobsuche, kosten die Kasse aber mehr. K\u00FCrzere Zahlungen k\u00F6nnen Menschen unter Druck setzen, schnell irgendeinen Job anzunehmen."},
+  {key:"repl",label:"Lohnersatzquote",min:40,max:80,step:1,def:60,fmt:v=>nf(v,0)+" % vom letzten Netto",
+   what:"Wie viel Prozent des letzten Nettogehalts man als Arbeitslosengeld bekommt.",
+   effect:"Eine h\u00F6here Quote sichert den Lebensstandard besser ab, ist aber teurer. Eine niedrigere Quote spart Geld, kann aber in Not bringen."},
+  {key:"konj",label:"Konjunkturelle Lage",min:-2,max:2,step:1,def:0,fmt:v=>({"-2":"Rezession","-1":"Abschwung","0":"Normal","1":"Aufschwung","2":"Boom"})[v],
+   what:"Wie gut die Wirtschaft l\u00E4uft. Von Rezession (Wirtschaft schrumpft) bis Boom (Wirtschaft w\u00E4chst stark).",
+   effect:"In der Rezession verlieren Menschen ihre Jobs. Dann sinken die Einnahmen und die Ausgaben steigen. Im Boom ist es umgekehrt."}
+ ],
+ presets:[
+  {name:"Rezession",set:{konj:-2}},
+  {name:"Boom",set:{konj:2}},
+  {name:"Gro\u00DFz\u00FCgig",set:{repl:80,dur:24}}
+ ],
+ tasks:[
+  "Schalte auf Rezession. Was passiert mit den Einnahmen, was mit den Ausgaben? Warum ist das f\u00FCr die Kasse besonders schwierig?",
+  "Stelle die Lohnersatzquote auf 80 %. Welche Vor- und Nachteile hat das f\u00FCr Arbeitslose, Besch\u00E4ftigte und Arbeitgeber?",
+  "Wie lange sollte man h\u00F6chstens Arbeitslosengeld bekommen? Begr\u00FCnde mit deinen Beobachtungen aus der Simulation."
+ ],
+ compute(s){
+  const k=s.konj;
+  const qEff=Math.max(1,s.quote-0.9*k);
+  const unemployed=46*qEff/100;
+  const algRecip=unemployed*0.35*(0.35+0.65*s.dur/12);
+  const alg=2000*s.repl/100;
+  const algCost=algRecip*alg*12/1000;
+  const other=16+8*qEff/6;
+  const employed=34*(1-0.012*(qEff-6));
+  const income=employed*s.rate/100*3600*(1+0.01*k)*12/1000;
+  const expense=algCost+other;
+  return{income,expense,
+   inParts:[["Beitr\u00E4ge",income]],
+   outParts:[["Arbeitslosengeld",algCost],["Vermittlung, Kurzarbeit u. a.",other]],
+   metrics:[
+    {who:"Besch\u00E4ftigte",lab:"Dein Beitrag pro Monat (Arbeitnehmeranteil)",val:nf(s.rate/200*3800,0)+" \u20AC"},
+    {who:"Arbeitslose",lab:"Arbeitslosengeld pro Monat (Beispiel)",val:nf(alg,0)+" \u20AC"},
+    {who:"Kasse",lab:"Tats\u00E4chliche Arbeitslosenquote",val:nf(qEff,1)+" %"},
+    {who:"Arbeitslose",lab:"Empf\u00E4nger von Arbeitslosengeld",val:nf(algRecip,2)+" Mio."},
+    {who:"Kasse",lab:"Besch\u00E4ftigte (Beitragszahler)",val:nf(employed,1)+" Mio."}
+   ]};
+ }
+},
+/* ---------------- UNFALL ---------------- */
+{
+ id:"unfall",tab:"Unfall",title:"Unfallversicherung",
+ claim:"\u201ESicherheit am Arbeitsplatz kostet nur Geld und bringt der Kasse nichts.\u201C",
+ hint:"Ver\u00E4ndere die Pr\u00E4vention und beobachte drei Dinge: die Ausgaben, die Zahl der Unf\u00E4lle und die Zahl der verhinderten Unf\u00E4lle.",
+ resolve:"Pr\u00E4vention senkt die Zahl der Unf\u00E4lle. Bis zu einem gewissen Punkt rechnet sich das sogar finanziell, dar\u00FCber hinaus vor allem menschlich: Jeder verhinderte Unfall bedeutet weniger Leid. Die Beitr\u00E4ge zahlen allein die Arbeitgeber. Daf\u00FCr haften sie bei Arbeitsunf\u00E4llen nicht pers\u00F6nlich gegen\u00FCber den Besch\u00E4ftigten (Haftungsabl\u00F6sung).",
+ params:[
+  {key:"rate",label:"Beitragssatz (% der Lohnsumme)",min:0.3,max:2,step:0.05,def:0.85,fmt:v=>nf(v,2)+" %",
+   what:"Wie viel Prozent der Lohnsumme eines Betriebs an die Berufsgenossenschaft gehen. Nur die Arbeitgeber zahlen, die Besch\u00E4ftigten nichts.",
+   effect:"Mehr Beitrag bringt Geld in die Kasse, macht aber jede Arbeitsstunde f\u00FCr die Betriebe teurer."},
+  {key:"risk",label:"Unfallrisiko der Branche",min:10,max:45,step:1,def:23,fmt:v=>nf(v,0)+" je 1.000 Besch\u00E4ftigte",
+   what:"Wie viele meldepflichtige Arbeitsunf\u00E4lle je 1.000 Besch\u00E4ftigte passieren, bevor Pr\u00E4vention wirkt. Im B\u00FCro ist das Risiko niedrig, auf dem Bau hoch.",
+   effect:"Gef\u00E4hrliche Branchen verursachen mehr Kosten. Darum zahlen sie in der Praxis h\u00F6here Beitr\u00E4ge (Gefahrenklassen)."},
+  {key:"benefit",label:"H\u00F6he der Leistungen",min:70,max:150,step:5,def:100,fmt:v=>nf(v,0)+" % von heute",
+   what:"Wie gro\u00DF die Leistungen bei Arbeitsunf\u00E4llen und Berufskrankheiten sind: Heilbehandlung, Reha, Verletztengeld, Renten.",
+   effect:"Bessere Leistungen helfen Verletzten, kosten die Kasse aber mehr."},
+  {key:"prev",label:"Investition in Pr\u00E4vention",min:0,max:4,step:0.1,def:1,fmt:v=>nf(v,1)+" Mrd. \u20AC",
+   what:"Geld f\u00FCr Schutzausr\u00FCstung, Kontrollen, Schulungen und Forschung, damit Unf\u00E4lle gar nicht erst passieren.",
+   effect:"Mehr Pr\u00E4vention verhindert Unf\u00E4lle. Am Anfang lohnt sich jeder Euro, sp\u00E4ter wird der Nutzen kleiner."}
+ ],
+ presets:[
+  {name:"Baubranche",set:{risk:40}},
+  {name:"Keine Pr\u00E4vention",set:{prev:0}},
+  {name:"Viel Pr\u00E4vention",set:{prev:3}}
+ ],
+ tasks:[
+  "Stelle die Pr\u00E4vention auf 0 und dann auf 3 Mrd. \u20AC. Was f\u00E4llt dir bei den Ausgaben, bei den Unf\u00E4llen und bei den verhinderten Unf\u00E4llen auf?",
+  "Die Besch\u00E4ftigten zahlen keinen Beitrag. Warum ist das so geregelt? Was w\u00E4re, wenn sie mitzahlen m\u00FCssten?",
+  "Stelle das Unfallrisiko auf 40 (zum Beispiel Baubranche). Wie hoch muss der Beitrag sein, damit die Kasse im Gleichgewicht bleibt? Ist das fair gegen\u00FCber anderen Branchen?"
+ ],
+ compute(s){
+  const workers=37, payroll=1750;
+  const red=0.15*(1-Math.exp(-s.prev/1.2));
+  const effRisk=s.risk*(1-red);
+  const acc=effRisk/1000*workers*1e6;
+  const prevented=(s.risk-effRisk)/1000*workers*1e6;
+  const costAcc=14000*s.benefit/100;
+  const accCost=acc*costAcc/1e9;
+  const bk=2.5*s.benefit/100;
+  const income=s.rate/100*payroll;
+  const expense=accCost+bk+s.prev;
+  return{income,expense,
+   inParts:[["Arbeitgeberbeitr\u00E4ge",income]],
+   outParts:[["Unfallleistungen",accCost],["Berufskrankheiten",bk],["Pr\u00E4vention",s.prev]],
+   metrics:[
+    {who:"Besch\u00E4ftigte",lab:"Dein Beitrag pro Monat",val:"0 \u20AC"},
+    {who:"Arbeitgeber",lab:"Beitrag je Besch\u00E4ftigtem und Monat",val:nf(s.rate/100*payroll/workers*1000/12,0)+" \u20AC"},
+    {who:"Kasse",lab:"Arbeitsunf\u00E4lle pro Jahr",val:nf(acc/1000,0)+" Tsd."},
+    {who:"Verletzte",lab:"Durch Pr\u00E4vention verhinderte Unf\u00E4lle",val:nf(prevented/1000,0)+" Tsd."},
+    {who:"Verletzte",lab:"Kassenleistung je Unfall im Schnitt",val:nf(costAcc,0)+" \u20AC"}
+   ]};
+ }
+}
+];
+
+/* ---------- formative data ---------- */
+const EXTRA={
+ rente:{
+  missions:["Bring die Kasse wieder ins Gleichgewicht. Welche Regler helfen am meisten – und wen belasten sie?", "Was müsste sich ändern, damit die Rente trotz längerer Lebenserwartung bezahlbar bleibt? Probier vor allem das Renteneintrittsalter.", "Vergleiche die Durchschnittsrente bei 63 und bei 67 Jahren. Bekommt man mehr, wenn man länger einzahlt?"],
+  goals:["Ich kann erklären, wie das Umlageverfahren funktioniert.","Ich kann beschreiben, wie Rentenalter, Beitragssatz und Bundeszuschuss die Rentenkasse beeinflussen.","Ich kann beurteilen, wer bei einer Rentenreform belastet wird."],
+  tips:[
+   ["Probiere zuerst jeden Regler einzeln: Wie weit musst du ihn drehen, um die Lücke allein zu schließen?","Ein einzelner Regler braucht oft extreme Werte. Kombiniere zwei Regler und achte auf die Kennzahlen „Dein Beitrag“ und „Durchschnittsrente“."],
+   ["Ordne jedem Regler, den du verändert hast, eine Gruppe zu: Beschäftigte, Rentnerinnen und Rentner oder Steuerzahler.","Denk an die Generationen: Wer zahlt heute, wer bekommt heute? Und woher kommt das Geld für den Bundeszuschuss?"],
+   ["Schau auf die Waage: Wohin fließen die Beiträge, die heute eingezahlt werden?","Verändere den Durchschnittsverdienst und vergleiche „Dein Beitrag“ und „Durchschnittsrente“. Gibt es einen Zusammenhang – und ist es trotzdem ein Sparkonto?"]
+  ]},
+ kranken:{
+  missions:["Gleiche die Kasse aus. Reicht der Zusatzbeitrag allein?", "Beobachte beide Waagschalen: Was steigt, was sinkt? Wer gewinnt, wer verliert?", "Wer zahlt jetzt zusätzlich? Finde heraus, wie viel Familienversicherung möglich ist, ohne dass die Kasse ins Minus rutscht."],
+  goals:["Ich kann das Solidarprinzip an einem Beispiel erklären.","Ich kann beschreiben, wie Kosten, Beiträge und Versichertenkreis die Krankenkasse beeinflussen.","Ich kann eine Reform wie die Bürgerversicherung begründet beurteilen."],
+  tips:[
+   ["Welche Regler bringen mehr Einnahmen, welche senken Ausgaben? Probiere zuerst den Zusatzbeitrag.","Der Zusatzbeitrag allein reicht nicht ganz. Was könntest du zusätzlich verändern – und wer merkt das im Geldbeutel?"],
+   ["Vergleiche beide Waagschalen vor und nach der Änderung: Steigen nur die Einnahmen?","Wer ist bisher privat versichert und würde jetzt gesetzlich einzahlen? Wer könnte dabei verlieren, zum Beispiel Arztpraxen oder Versicherungen?"],
+   ["Wer ist familienversichert? Denk an Kinder und Ehepartner ohne eigenes Einkommen.","Prüfe zwei Gerechtigkeitsideen: „Wer Leistungen bekommt, soll zahlen“ und „Familien sollen entlastet werden“. Welche überzeugt dich mehr – und warum?"]
+  ]},
+ pflege:{
+  missions:["Versuch, die Pflegekasse auszugleichen. Wechsle danach in den Reiter Rente: Was macht dieselbe Lebenserwartung dort?", "Stelle den Heimanteil danach auf 40 %. Wie groß ist der Unterschied – und was bedeutet das für die Pflegebedürftigen?", "Gleiche die Kasse aus – einmal über den Beitrag, einmal über die Leistungen. Wer trägt jeweils die Last?"],
+  goals:["Ich kann erklären, warum die Pflegeversicherung nur einen Teil der Kosten übernimmt.","Ich kann beschreiben, wie Alterung und Pflegeform die Ausgaben beeinflussen.","Ich kann beurteilen, wer die Folgen von Leistungskürzungen trägt."],
+  tips:[
+   ["Achte auf die Kennzahl „Anzahl Pflegebedürftige“ – und wechsle danach in den Reiter Rente. Der Regler ist dort derselbe.","Beide Kassen werden aus den Beiträgen derselben Beschäftigten bezahlt. Was bedeutet das für sie?"],
+   ["Vergleiche die Ausgaben bei beiden Werten und die Kennzahl „Kassenleistung je Pflegebedürftigem“.","Denk über Geld hinaus: Wer pflegt eigentlich bei der ambulanten Pflege? Und wie fühlt sich ein Umzug ins Heim an?"],
+   ["Senke die Leistungen und beobachte die Kasse. Wer bezahlt den Teil, den die Kasse nicht mehr übernimmt?","Wenn Pflegebedürftige den Eigenanteil nicht zahlen können, springt das Sozialamt ein. Wird dann wirklich gespart?"]
+  ]},
+ alv:{
+  missions:["Achte auf beide Waagschalen. Was könnte die Kasse in der Krise tun – und was wäre gerade jetzt schädlich?", "Was würdest du mit dem Überschuss machen: Rücklage bilden, Beiträge senken oder Leistungen erhöhen?", "Wie hoch müsste der Beitrag steigen, damit die Kasse das bezahlen kann? Probier auch kürzere Bezugsdauern."],
+  goals:["Ich kann erklären, warum die Arbeitslosenversicherung in der Krise doppelt unter Druck gerät.","Ich kann beschreiben, wie Lohnersatzquote und Bezugsdauer die Kasse beeinflussen.","Ich kann abwägen, wie viel Absicherung angemessen ist."],
+  tips:[
+   ["Beobachte beide Waagschalen gleichzeitig, wenn du auf Rezession schaltest.","Was passiert mit der Zahl der Beitragszahler, wenn Menschen ihren Job verlieren? Was folgt daraus für die Einnahmen?"],
+   ["Mach dir eine kleine Liste: Arbeitslose – Beschäftigte – Arbeitgeber. Was ändert sich jeweils?","Wer bezahlt das höhere Arbeitslosengeld am Ende? Schau auf die Kassenlage und überlege, was dann passieren müsste."],
+   ["Vergleiche 6 und 24 Monate. Was ändert sich bei der Kasse und bei den Empfängern?","Was ist wichtiger: Zeit, um eine passende Stelle zu finden, oder niedrige Kosten? Gibt es Menschen, die mehr Zeit brauchen?"]
+  ]},
+ unfall:{
+  missions:["Finde den Beitragssatz, bei dem die Kasse wieder ausgeglichen ist.", "Dreh die Prävention schrittweise hoch: 1, 2, 3 Mrd. €. Was passiert mit Unfällen und Ausgaben?", "Vergleiche mit 1 Mrd. € Prävention: Lohnt sich jeder zusätzliche Euro gleich viel?"],
+  goals:["Ich kann erklären, warum nur Arbeitgeber die Unfallversicherung bezahlen.","Ich kann beschreiben, wie Prävention und Unfallrisiko die Kasse beeinflussen.","Ich kann beurteilen, ob Beiträge nach Branchenrisiko fair sind."],
+  tips:[
+   ["Schau auf drei Kennzahlen: Ausgaben, Arbeitsunfälle und verhinderte Unfälle.","Vergleiche auch 0, 1 und 2 Mrd. €: Lohnt sich jeder zusätzliche Euro gleich viel?"],
+   ["Wer entscheidet im Betrieb über Schutzausrüstung und Sicherheitsregeln?","Bei einem Arbeitsunfall zahlt die Unfallversicherung – nicht der Chef persönlich. Was hat der Arbeitgeber davon?"],
+   ["Dreh den Beitragssatz so lange, bis die Waage ausgeglichen ist. Notiere den Wert.","Sollen Büros und Baustellen den gleichen Beitrag zahlen? Überlege, wer die Kosten verursacht – und wer die Arbeit trotzdem braucht."]
+  ]}
+};
+const CHECK=[
+ "Ich habe beschrieben, was ich in der Simulation verändert habe und was dann passiert ist.",
+ "Ich habe erklärt, warum das passiert (Ursache und Wirkung).",
+ "Ich habe genannt, wen das betrifft.",
+ "Ich habe meine Position begründet und ein Gegenargument abgewogen (wenn die Aufgabe ein Urteil verlangt)."
+];
+const DIRS=[["up","steigt"],["eq","bleibt etwa gleich"],["down","sinkt"]];
+const CONF=[["guess","geraten"],["mid","ziemlich sicher"],["sure","sehr sicher"]];
+const CLAIM=[["yes","stimmt"],["part","stimmt teilweise"],["no","stimmt nicht"]];
+const AMPEL=[["red","noch nicht"],["yellow","teilweise"],["green","sicher"]];
+const lab=(arr,k)=>{const f=arr.find(x=>x[0]===k);return f?f[1]:"–";};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- storage ---------- */
+const KEY="sv-labor-v2";
+const store={answers:{},checks:{},tips:{},claimPre:{},claimPost:{},claimWhy:{},goals:{},preds:{},scen:{},step:{},kuerzel:""};
+try{
+  const raw=localStorage.getItem(KEY);
+  if(raw){const o=JSON.parse(raw);if(o&&typeof o==="object")Object.assign(store,o);}
+  else{const old=localStorage.getItem("sv-labor-answers");if(old)store.answers=JSON.parse(old)||{};}
+}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}};
+
+/* ---------- state ---------- */
+const state={};
+INS.forEach(i=>{state[i.id]={};i.params.forEach(p=>{if(!p.shared)state[i.id][p.key]=p.def;});});
+let curIdx=0;
+const cur=()=>INS[curIdx];
+const getV=(i,p)=>p.shared?shared[p.shared]:state[i.id][p.key];
+const setV=(i,p,v)=>{if(p.shared)shared[p.shared]=v;else state[i.id][p.key]=v;};
+const valuesOf=i=>{const o={};i.params.forEach(p=>o[p.key]=getV(i,p));return o;};
+const applyValues=(i,o)=>i.params.forEach(p=>{if(p.key in o)setV(i,p,o[p.key]);});
+
+/* ---------- scale animation ---------- */
+const beam=$("#beam"),panL=$("#panL"),panR=$("#panR");
+let angle=0,raf=0;
+function draw(a){
+  const rad=a*Math.PI/180,L=150;
+  const dx=L*(Math.cos(rad)-1),dy=L*Math.sin(rad);
+  beam.setAttribute("transform","rotate("+a.toFixed(2)+" 200 56)");
+  panL.setAttribute("transform","translate("+(-dx).toFixed(2)+" "+(-dy).toFixed(2)+")");
+  panR.setAttribute("transform","translate("+dx.toFixed(2)+" "+dy.toFixed(2)+")");
+}
+function setAngle(target){
+  cancelAnimationFrame(raf);
+  if(reduce){angle=target;draw(angle);return;}
+  const from=angle,t0=performance.now(),dur=380;
+  const step=t=>{
+    const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);
+    angle=from+(target-from)*e;draw(angle);
+    if(k<1)raf=requestAnimationFrame(step);
+  };
+  raf=requestAnimationFrame(step);
+}
+draw(0);
+
+/* ---------- segmented buttons ---------- */
+function seg(name,opts,val,onPick){
+  const d=document.createElement("div");d.className="seg";d.setAttribute("role","group");d.setAttribute("aria-label",name);
+  opts.forEach(([k,l])=>{
+    const b=document.createElement("button");b.type="button";b.textContent=l;
+    b.setAttribute("aria-pressed",val===k?"true":"false");
+    b.addEventListener("click",()=>{
+      d.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");onPick(k);
+    });
+    d.appendChild(b);
+  });
+  return d;
+}
+
+/* ---------- guided scenarios ---------- */
+const defaultsOf=i=>{const o={};i.params.forEach(p=>o[p.key]=p.def);return o;};
+const resetDefaults=i=>applyValues(i,defaultsOf(i));
+const scenRecs=i=>store.scen[i.id]||(store.scen[i.id]={});
+let draft={dir:null,conf:null,why:""};
+function scenChange(i,p){
+  const base=defaultsOf(i);
+  return Object.keys(p.set).map(k=>{const par=i.params.find(x=>x.key===k);return par.label+": "+par.fmt(base[k])+" → "+par.fmt(p.set[k]);}).join(", ");
+}
+function goStep(k){
+  const i=cur(),n=i.presets.length;
+  store.step[i.id]=k;save();draft={dir:null,conf:null,why:""};
+  if(k<n){resetDefaults(i);if(scenRecs(i)[k])applyValues(i,i.presets[k].set);}
+  update();renderGuide();
+  const g=$("#guide");if(g&&g.scrollIntoView)g.scrollIntoView({block:"start",behavior:reduce?"auto":"smooth"});
+}
+function startScenario(k){
+  const i=cur(),p=i.presets[k],base=defaultsOf(i),target=Object.assign({},base,p.set);
+  const a=i.compute(base),b=i.compute(target);
+  const d=(b.income-b.expense)-(a.income-a.expense);
+  const rel=Math.abs(d)/Math.max(a.income,1),sdir=d>0?"up":"down";
+  const actual=rel<0.005?"eq":sdir;
+  const hit=draft.dir===actual||(rel>=0.0005&&rel<0.015&&(draft.dir==="eq"||draft.dir===sdir));
+  scenRecs(i)[k]={label:"Szenario „"+p.name+"“",change:"Szenario „"+p.name+"“: "+scenChange(i,p),
+    pred:draft.dir,conf:draft.conf,why:(draft.why||"").trim(),actual:actual,
+    delta:d,dIn:b.income-a.income,dOut:b.expense-a.expense,hit:hit,note:""};
+  save();
+  resetDefaults(i);applyValues(i,p.set);
+  update();renderGuide();renderLernstand();
+}
+function renderGuide(){
+  const i=cur(),G=$("#guide"),n=i.presets.length,R=scenRecs(i);
+  let k=store.step[i.id];if(k==null)k=0;
+  let h='<nav class="steps" aria-label="Schritte">';
+  i.presets.forEach((p,j)=>{h+='<button type="button" class="step'+(j===k?' on':'')+(R[j]?' done':'')+'" data-step="'+j+'"'+(j===k?' aria-current="step"':'')+'>'+(j+1)+'. '+esc(p.name)+'</button>';});
+  h+='<button type="button" class="step'+(k>=n?' on':'')+'" data-step="'+n+'"'+(k>=n?' aria-current="step"':'')+'>Aufgaben</button></nav>';
+  if(k>=n){
+    h+='<div class="g-h">Alle Szenarien erkundet</div><p>Die Regler sind frei: Forsche weiter, so viel du willst, und bearbeite dann die Aufgaben.</p>'+
+       '<div class="pred-act"><button class="btn solid" type="button" id="toTasks">Zu den Aufgaben</button></div>';
+    G.innerHTML=h;
+    $("#toTasks").addEventListener("click",()=>{const t=$("#tasks");if(t.scrollIntoView)t.scrollIntoView({behavior:reduce?"auto":"smooth"});});
+  }else{
+    const p=i.presets[k],rec=R[k];
+    h+='<div class="g-kick">Szenario '+(k+1)+' von '+n+'</div><div class="g-h">'+esc(p.name)+'</div>'+
+       '<p class="pred-c">'+esc(scenChange(i,p))+'. Alle anderen Regler stehen auf Start.</p>';
+    if(!rec){
+      h+='<div class="g-phase">1 · Vorhersagen</div>'+
+         '<div class="pred-q">Was passiert mit dem Kassenstand?</div><div id="segDir"></div>'+
+         '<div class="pred-q">Wie sicher bist du?</div><div id="segConf"></div>'+
+         '<label class="pred-q" for="predWhy">Weil … <span class="opt">(freiwillig)</span></label>'+
+         '<input type="text" id="predWhy" autocomplete="off" maxlength="200">'+
+         '<div class="pred-act"><button class="btn solid" type="button" id="predGo" disabled>Szenario starten</button></div>';
+      G.innerHTML=h;
+      const ready=()=>{$("#predGo").disabled=!(draft.dir&&draft.conf);};
+      $("#segDir").replaceWith(seg("Vorhersage Kassenstand",DIRS,draft.dir,v=>{draft.dir=v;ready();}));
+      $("#segConf").replaceWith(seg("Sicherheit",CONF,draft.conf,v=>{draft.conf=v;ready();}));
+      const w=$("#predWhy");w.value=draft.why;w.addEventListener("input",()=>{draft.why=w.value;});
+      ready();
+      $("#predGo").addEventListener("click",()=>startScenario(k));
+    }else{
+      const abs=nf(Math.abs(rec.delta),1);
+      const what=rec.actual==="eq"?"bleibt fast gleich ("+sgn(rec.delta)+" Mrd. €)":rec.actual==="up"?"steigt um "+abs+" Mrd. €":"sinkt um "+abs+" Mrd. €";
+      h+='<div class="g-phase">2 · Ergebnis</div>'+
+         '<div class="pred-h '+(rec.hit?"hit":"miss")+'">'+(rec.hit?"Richtig vorhergesagt":"Überraschung!")+'</div>'+
+         '<p>Der Kassenstand '+what+'. Einnahmen '+sgn(rec.dIn)+' Mrd. €, Ausgaben '+sgn(rec.dOut)+' Mrd. €.'+
+         (rec.hit?'':' Du hattest „'+lab(DIRS,rec.pred)+'“ erwartet.')+'</p>'+
+         (!rec.hit&&rec.conf==="sure"?'<p class="warn">Du warst dir sehr sicher. Genau solche Überraschungen zeigen, wo sich Nachdenken lohnt.</p>':'')+
+         '<label class="pred-q" for="fbNote">'+(rec.hit?'Kannst du erklären, warum?':'Wie erklärst du dir das?')+'</label>'+
+         '<textarea id="fbNote" rows="2"></textarea>'+
+         '<div class="tip" id="fbWhy" hidden><b>Vergleiche mit der Erklärung:</b> '+Object.keys(p.set).map(key=>esc(i.params.find(x=>x.key===key).effect)).join(" ")+'</div>'+
+         '<div class="tiprow"><button class="btn quiet" type="button" id="fbShow">Erklärung vergleichen</button></div>'+
+         '<div class="g-phase">3 · Jetzt du</div>'+
+         '<div class="mission"><b>Auftrag:</b> '+esc(EXTRA[i.id].missions[k])+'<br><span class="sub">Die Regler unten sind frei. Probier aus, so viel du willst – die Waage reagiert sofort.</span></div>'+
+         '<div class="pred-act"><button class="btn solid" type="button" id="nextStep">'+(k+1<n?'Weiter zu Szenario '+(k+2):'Weiter zu den Aufgaben')+'</button>'+
+         '<button class="btn quiet" type="button" id="reloadScen">Szenario neu laden</button></div>';
+      G.innerHTML=h;
+      const fb=$("#fbNote");fb.value=rec.note||"";fb.addEventListener("input",()=>{rec.note=fb.value;save();});
+      $("#fbShow").addEventListener("click",()=>{$("#fbWhy").hidden=false;$("#fbShow").hidden=true;});
+      $("#nextStep").addEventListener("click",()=>goStep(k+1));
+      $("#reloadScen").addEventListener("click",()=>{resetDefaults(i);applyValues(i,p.set);update();});
+    }
+  }
+  G.querySelectorAll(".step").forEach(b=>b.addEventListener("click",()=>goStep(+b.dataset.step)));
+}
+
+/* ---------- tabs ---------- */
+function renderTabs(){
+  const box=$("#tabs");box.innerHTML="";
+  INS.forEach((i,idx)=>{
+    const b=document.createElement("button");
+    b.className="tab";b.type="button";b.setAttribute("role","tab");b.id="tab-"+i.id;
+    b.textContent=i.tab;
+    b.setAttribute("aria-selected",idx===curIdx?"true":"false");
+    b.tabIndex=idx===curIdx?0:-1;
+    b.addEventListener("click",()=>selectTab(idx));
+    b.addEventListener("keydown",e=>{
+      if(e.key==="ArrowRight"){selectTab((curIdx+1)%INS.length,true);e.preventDefault();}
+      if(e.key==="ArrowLeft"){selectTab((curIdx+INS.length-1)%INS.length,true);e.preventDefault();}
+    });
+    box.appendChild(b);
+  });
+}
+function selectTab(idx,focus){
+  curIdx=idx;draft={dir:null,conf:null,why:""};
+  renderTabs();renderStatic();renderControls();update();renderGuide();renderLernstand();
+  const t=$("#tab-"+cur().id);
+  if(t){if(t.scrollIntoView)t.scrollIntoView({inline:"center",block:"nearest"});if(focus)t.focus();}
+}
+
+/* ---------- claim, presets, tasks ---------- */
+function renderStatic(){
+  const i=cur(),X=EXTRA[i.id];
+  $("#claim").innerHTML=
+    '<div class="label">Behauptung zum Testen</div><q>'+i.claim+'</q>'+
+    '<div class="pred-q">Was denkst du, bevor du loslegst?</div><div id="claimPreSeg"></div>'+
+    '<p class="hint">'+i.hint+'</p>'+
+    '<div class="label" style="margin-top:12px">Darum geht’s: Am Ende …</div><ul class="goals">'+X.goals.map(g=>'<li>'+esc(g)+'</li>').join("")+'</ul>'+
+    '<p class="sub" style="margin-top:8px">Die Auflösung erscheint unten bei „Mein Lernstand“, sobald du die Behauptung noch einmal eingeschätzt hast.</p>';
+  $("#claimPreSeg").replaceWith(seg("Einschätzung vorher",CLAIM,store.claimPre[i.id]||null,k=>{store.claimPre[i.id]=k;save();renderLernstand();}));
+  $("#ctlTitle").textContent=i.title;
+  const tk=$("#tasks");
+  tk.innerHTML="<h2>Aufgaben</h2><p>Probiere die Regler aus und beantworte die Fragen. Wenn du feststeckst, hol dir einen Tipp. Mit dem Selbstcheck prüfst du, ob deine Antwort vollständig ist.</p>";
+  i.tasks.forEach((t,n)=>{
+    const key=i.id+"-"+n,tips=X.tips[n];
+    const d=document.createElement("div");d.className="task";
+    d.innerHTML='<label for="ta-'+key+'">Aufgabe '+(n+1)+': '+esc(t)+'</label><textarea id="ta-'+key+'"></textarea>'+
+      '<div class="tips"></div><div class="tiprow"></div>'+
+      '<div class="check"><div class="pred-q">Selbstcheck: Was steckt schon in deiner Antwort?</div></div>';
+    const ta=d.querySelector("textarea");ta.value=store.answers[key]||"";
+    ta.addEventListener("input",()=>{store.answers[key]=ta.value;save();});
+    const tipsBox=d.querySelector(".tips"),row=d.querySelector(".tiprow");
+    const drawTips=()=>{
+      const u=store.tips[key]||0;
+      tipsBox.innerHTML=tips.slice(0,u).map((x,k)=>'<div class="tip"><b>Tipp '+(k+1)+':</b> '+esc(x)+'</div>').join("");
+      row.innerHTML="";
+      if(u<tips.length){
+        const b=document.createElement("button");b.type="button";b.className="btn quiet";b.textContent="Tipp "+(u+1)+" anzeigen";
+        b.addEventListener("click",()=>{store.tips[key]=u+1;save();drawTips();});
+        row.appendChild(b);
+      }
+    };
+    drawTips();
+    const cb=d.querySelector(".check"),st=store.checks[key]||[];
+    CHECK.forEach((c,k)=>{
+      const l=document.createElement("label"),x=document.createElement("input");
+      x.type="checkbox";x.checked=!!st[k];
+      x.addEventListener("change",()=>{const a=store.checks[key]||[];a[k]=x.checked;store.checks[key]=a;save();});
+      l.appendChild(x);l.appendChild(document.createTextNode(c));cb.appendChild(l);
+    });
+    tk.appendChild(d);
+  });
+}
+
+/* ---------- sliders ---------- */
+function renderControls(){
+  const i=cur(),wrap=$("#sliders");wrap.innerHTML="";
+  i.params.forEach(p=>{
+    const id=i.id+"-"+p.key;
+    const row=document.createElement("div");row.className="param";
+    row.innerHTML=
+      '<div class="ph"><label for="'+id+'">'+p.label+'</label>'+
+      '<button class="q" type="button" aria-expanded="false" aria-controls="'+id+'-info" aria-label="Erklärung zu '+p.label+'">?</button>'+
+      '<output id="'+id+'-out" for="'+id+'"></output></div>'+
+      '<input type="range" id="'+id+'" min="'+p.min+'" max="'+p.max+'" step="'+p.step+'">'+
+      '<div class="pf"><span>'+p.fmt(p.min)+'</span><span>Start: '+p.fmt(p.def)+'</span><span>'+p.fmt(p.max)+'</span></div>'+
+      '<div class="info" id="'+id+'-info" hidden><p><b>Was ist das?</b> '+p.what+'</p><p><b>Wenn du daran drehst:</b> '+p.effect+'</p></div>';
+    const inp=row.querySelector("input"),q=row.querySelector(".q"),info=row.querySelector(".info");
+    inp.addEventListener("input",()=>{
+      setV(i,p,parseFloat(inp.value));update();
+    });
+    q.addEventListener("click",()=>{
+      const open=q.getAttribute("aria-expanded")==="true";
+      q.setAttribute("aria-expanded",open?"false":"true");info.hidden=open;
+    });
+    wrap.appendChild(row);
+  });
+}
+
+/* ---------- update ---------- */
+function verdict(bal,rel){
+  if(Math.abs(rel)<0.02)return{cls:"ok",h:"Die Kasse ist im Gleichgewicht.",t:"Einnahmen und Ausgaben passen zusammen. Schon kleine Änderungen an den Reglern bringen die Waage ins Kippen."};
+  if(bal<0)return{cls:"deficit",h:"Es fehlen "+nf(-bal,1)+" Mrd. € im Jahr.",t:"Es gibt drei Wege: mehr einnehmen (Beiträge oder Steuergeld), weniger ausgeben (Leistungen) oder die Ursache verändern. Jeder Weg trifft andere Menschen. Wen?"};
+  return{cls:"surplus",h:"Die Kasse hat "+nf(bal,1)+" Mrd. € übrig.",t:"Das Geld kann als Rücklage bleiben, die Beiträge könnten sinken oder die Leistungen steigen. Was wäre fair?"};
+}
+function update(){
+  const i=cur(),now=valuesOf(i),r=i.compute(now);
+  i.params.forEach(p=>{
+    const id=i.id+"-"+p.key,v=now[p.key];
+    const inp=document.getElementById(id),out=document.getElementById(id+"-out");
+    if(!inp)return;
+    inp.value=v;
+    inp.style.setProperty("--pct",((v-p.min)/(p.max-p.min)*100)+"%");
+    inp.setAttribute("aria-valuetext",p.fmt(v));
+    out.textContent=p.fmt(v);
+  });
+  const bal=r.income-r.expense,rel=bal/Math.max(r.income,1);
+  const vd=verdict(bal,rel);
+  $("#scale").className="card scale"+(vd.cls==="deficit"?" deficit":"");
+  $("#valIn").textContent=nf(r.income,1)+" Mrd. €";
+  $("#valOut").textContent=nf(r.expense,1)+" Mrd. €";
+  $("#vHead").textContent=vd.h;$("#vText").textContent=vd.t;
+  const fill=(sel,arr)=>{$(sel).innerHTML=arr.map(a=>"<li><span>"+a[0]+"</span><b>"+nf(a[1],1)+"</b></li>").join("");};
+  fill("#partsIn",r.inParts);fill("#partsOut",r.outParts);
+  $("#metrics").innerHTML=r.metrics.map(m=>
+    '<div class="metric"><div class="m-who">'+m.who+'</div><div class="m-val">'+m.val+'</div><div class="m-lab">'+m.lab+'</div></div>').join("");
+  $("#stripVal").textContent=sgn(bal)+" Mrd. €";
+  $("#strip").style.setProperty("--tone",vd.cls==="deficit"?"var(--neg)":"var(--pos)");
+  setAngle(Math.max(-16,Math.min(16,(r.expense-r.income)/Math.max(r.income,1)*90)));
+}
+
+/* ---------- Lernstand ---------- */
+function renderLernstand(){
+  const i=cur(),L=$("#lernstand"),P=Object.values(store.scen[i.id]||{}),X=EXTRA[i.id];
+  let h='<h2>Mein Lernstand</h2><p class="sub">Fehler sind hier erwünscht: Sie zeigen, wo sich Nachdenken lohnt. Nichts davon zählt für die Note.</p><h3>Meine Vorhersagen</h3>';
+  if(!P.length){
+    h+='<p>'+'Noch keine Vorhersagen. Starte oben mit dem ersten Szenario.'+'</p>';
+  }else{
+    const hits=P.filter(r=>r.hit).length,sure=P.filter(r=>!r.hit&&r.conf==="sure");
+    h+='<p><b>'+hits+' von '+P.length+'</b> richtig vorhergesagt.</p>';
+    if(sure.length)h+='<p class="warn">Sicher, aber daneben: '+esc([...new Set(sure.map(r=>r.label))].join(", "))+'. Hier steckt vermutlich eine Fehlvorstellung. Probier diese Regler noch einmal und erkläre dir, was passiert.</p>';
+    h+='<ul class="plog">'+P.slice(-8).reverse().map(r=>'<li><span class="'+(r.hit?"ok":"no")+'">'+(r.hit?"richtig":"daneben")+'</span> · '+esc(r.change)+' · erwartet: '+lab(DIRS,r.pred)+', tatsächlich: '+lab(DIRS,r.actual)+'</li>').join("")+'</ul>';
+  }
+  h+='<h3>Die Behauptung: Was denkst du jetzt?</h3><p><q>'+i.claim+'</q></p>'+
+     (store.claimPre[i.id]?'<p class="sub">Vorher hast du gesagt: „'+lab(CLAIM,store.claimPre[i.id])+'“.</p>':'')+
+     '<div id="claimPostSeg"></div>'+
+     '<label class="pred-q" for="claimWhy">Begründe kurz mit dem, was du in der Simulation beobachtet hast.</label>'+
+     '<textarea id="claimWhy" rows="3"></textarea>'+
+     '<div class="resolve" id="resolveBox"'+(store.claimPost[i.id]?'':' hidden')+'><b>Auflösung:</b> '+i.resolve+'</div>'+
+     '<h3>Wie sicher bist du bei diesen Zielen?</h3><div id="goalBox"></div>';
+  L.innerHTML=h;
+  $("#claimPostSeg").replaceWith(seg("Einschätzung jetzt",CLAIM,store.claimPost[i.id]||null,k=>{store.claimPost[i.id]=k;save();$("#resolveBox").hidden=false;}));
+  const cw=$("#claimWhy");cw.value=store.claimWhy[i.id]||"";
+  cw.addEventListener("input",()=>{store.claimWhy[i.id]=cw.value;save();});
+  const gb=$("#goalBox"),g=store.goals[i.id]||(store.goals[i.id]=[]);
+  X.goals.forEach((t,n)=>{
+    const row=document.createElement("div");row.className="goalrow";
+    const p=document.createElement("div");p.textContent=t;row.appendChild(p);
+    row.appendChild(seg(t,AMPEL,g[n]||null,k=>{g[n]=k;save();}));
+    gb.appendChild(row);
+  });
+}
+
+/* ---------- reset ---------- */
+$("#resetBtn").addEventListener("click",()=>{
+  const i=cur();
+  i.params.forEach(p=>setV(i,p,p.def));
+  update();
+});
+
+/* ---------- export ---------- */
+function buildExport(){
+  let t="Sozialversicherungs-Labor – Lernstand\nKürzel: "+((store.kuerzel||"").trim()||"–")+"\n\n";
+  let any=false;
+  INS.forEach(i=>{
+    let s="";
+    const pre=store.claimPre[i.id],post=store.claimPost[i.id],why=(store.claimWhy[i.id]||"").trim();
+    if(pre||post)s+="Behauptung: vorher „"+lab(CLAIM,pre)+"“, nachher „"+lab(CLAIM,post)+"“"+(why?"\n  Begründung: "+why:"")+"\n";
+    const P=Object.values(store.scen[i.id]||{});
+    if(P.length){
+      s+="Vorhersagen: "+P.filter(r=>r.hit).length+" von "+P.length+" richtig\n";
+      P.forEach(r=>{
+        if(r.hit&&!r.note)return;
+        s+="  "+(r.hit?"richtig":"daneben")+": "+r.change+" (erwartet: "+lab(DIRS,r.pred)+", tatsächlich: "+lab(DIRS,r.actual)+", Sicherheit: "+lab(CONF,r.conf)+")"+
+          (r.why?"\n    weil: "+r.why:"")+(r.note?"\n    Erklärung danach: "+r.note.trim():"")+"\n";
+      });
+    }
+    const g=store.goals[i.id]||[];
+    if(g.some(Boolean))s+="Selbsteinschätzung:\n"+EXTRA[i.id].goals.map((x,n)=>"  "+x+" – "+lab(AMPEL,g[n])).join("\n")+"\n";
+    i.tasks.forEach((tk,n)=>{
+      const key=i.id+"-"+n,a=(store.answers[key]||"").trim();
+      if(!a)return;
+      const c=(store.checks[key]||[]).filter(Boolean).length;
+      s+="Aufgabe "+(n+1)+": "+tk+"\nAntwort: "+a+"\n(Tipps genutzt: "+(store.tips[key]||0)+" von 2, Selbstcheck: "+c+" von 4)\n";
+    });
+    if(s){any=true;t+="== "+i.title+" ==\n"+s+"\n";}
+  });
+  return any?t:"Du hast noch nichts bearbeitet.";
+}
+$("#collectBtn").addEventListener("click",()=>{
+  const box=$("#exportBox");
+  box.hidden=false;box.value=buildExport();
+  $("#copyBtn").hidden=false;
+});
+$("#copyBtn").addEventListener("click",async()=>{
+  const box=$("#exportBox");
+  try{await navigator.clipboard.writeText(box.value);$("#copyBtn").textContent="Kopiert";}
+  catch(e){box.select();$("#copyBtn").textContent="Text markiert: jetzt kopieren";}
+  setTimeout(()=>{$("#copyBtn").textContent="In die Zwischenablage kopieren";},2200);
+});
+
+/* ---------- init ---------- */
+$("#kuerzel").value=store.kuerzel||"";
+$("#kuerzel").addEventListener("input",e=>{store.kuerzel=e.target.value;save();});
+renderTabs();renderStatic();renderControls();update();renderGuide();renderLernstand();
+
+</script>
+</body>
+</html>
